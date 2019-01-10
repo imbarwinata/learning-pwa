@@ -20,6 +20,15 @@ function openCreatePostModal() {
 
     deferredPrompt = null;
   }
+
+  // if ('serviceWorker' in navigator) {
+  //   navigator.serviceWorker.getRegistrations()
+  //     .then(function(registrations) {
+  //       for (var i = 0; i < registrations.length; i++) {
+  //         registrations[i].unregister();
+  //       }
+  //     })
+  // }
 }
 
 function closeCreatePostModal() {
@@ -35,15 +44,15 @@ function onSaveButtonClicked(event) {
   console.log('clicked');
   if ('caches' in window) {
     caches.open('user-requested')
-      .then(cache => {
-        cache.add('https://httpbin.org/net');
+      .then(function(cache) {
+        cache.add('https://httpbin.org/get');
         cache.add('/src/images/sf-boat.jpg');
       });
   }
 }
 
 function clearCards() {
-  while (sharedMomentsArea.hasChildNodes()) {
+  while(sharedMomentsArea.hasChildNodes()) {
     sharedMomentsArea.removeChild(sharedMomentsArea.lastChild);
   }
 }
@@ -58,7 +67,7 @@ function createCard() {
   cardTitle.style.height = '180px';
   cardWrapper.appendChild(cardTitle);
   var cardTitleTextElement = document.createElement('h2');
-  cardTitleTextElement.style.color = 'black';
+  cardTitleTextElement.style.color = 'white';
   cardTitleTextElement.className = 'mdl-card__title-text';
   cardTitleTextElement.textContent = 'San Francisco Trip';
   cardTitle.appendChild(cardTitleTextElement);
@@ -75,33 +84,41 @@ function createCard() {
   sharedMomentsArea.appendChild(cardWrapper);
 }
 
-var url = 'https://httpbin.org/get';
+var url = 'https://httpbin.org/post';
 var networkDataReceived = false;
 
-fetch(url)
-  .then((res) => {
+fetch(url, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  },
+  body: JSON.stringify({
+    message: 'Some message'
+  })
+})
+  .then(function(res) {
     return res.json();
   })
-  .then(data => {
+  .then(function(data) {
     networkDataReceived = true;
-    console.log('From web data');
+    console.log('From web', data);
     clearCards();
     createCard();
   });
 
 if ('caches' in window) {
   caches.match(url)
-    .then(response => {
+    .then(function(response) {
       if (response) {
         return response.json();
       }
     })
-    .then(data => {
+    .then(function(data) {
       console.log('From cache', data);
       if (!networkDataReceived) {
         clearCards();
         createCard();
       }
-      createCard();
-    })
+    });
 }
