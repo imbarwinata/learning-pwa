@@ -33,11 +33,19 @@ closeCreatePostModalButton.addEventListener('click', closeCreatePostModal);
 // Currently not in use, allows to save assets in cache on demand otherwise
 function onSaveButtonClicked(event) {
   console.log('clicked');
-  caches.open('user-requested')
-    .then(cache => {
-      cache.add('https://httpbin.org/net');
-      cache.add('/src/images/sf-boat.jpg');
-    });
+  if ('caches' in window) {
+    caches.open('user-requested')
+      .then(cache => {
+        cache.add('https://httpbin.org/net');
+        cache.add('/src/images/sf-boat.jpg');
+      });
+  }
+}
+
+function clearCards() {
+  while (sharedMomentsArea.hasChildNodes()) {
+    sharedMomentsArea.removeChild(sharedMomentsArea.lastChild);
+  }
 }
 
 function createCard() {
@@ -67,10 +75,33 @@ function createCard() {
   sharedMomentsArea.appendChild(cardWrapper);
 }
 
-fetch('https://httpbin.org/get')
-  .then(function(res) {
+var url = 'https://httpbin.org/get';
+var networkDataReceived = false;
+
+fetch(url)
+  .then((res) => {
     return res.json();
   })
-  .then(function(data) {
+  .then(data => {
+    networkDataReceived = true;
+    console.log('From web data');
+    clearCards();
     createCard();
   });
+
+if ('caches' in window) {
+  caches.match(url)
+    .then(response => {
+      if (response) {
+        return response.json();
+      }
+    })
+    .then(data => {
+      console.log('From cache', data);
+      if (!networkDataReceived) {
+        clearCards();
+        createCard();
+      }
+      createCard();
+    })
+}
