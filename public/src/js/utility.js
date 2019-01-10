@@ -15,7 +15,6 @@ function writeData(st, data) {
     });
 }
 
-
 function readAllData(st) {
   return dbPromise
     .then(function(db) {
