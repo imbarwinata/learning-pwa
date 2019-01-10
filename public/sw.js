@@ -1,12 +1,15 @@
+importScripts('/src/js/idb.js');
+importScripts('/src/js/utility.js');
 
-var CACHE_STATIC_NAME = 'static-v.0.0.1';
-var CACHE_DYNAMIC_NAME = 'dynamic-v.0.0.1';
+var CACHE_STATIC_NAME = 'static-v.0.0.2';
+var CACHE_DYNAMIC_NAME = 'dynamic-v.0.0.2';
 var STATIC_FILES = [
   '/',
   '/index.html',
   '/offline.html',
   '/src/js/app.js',
   '/src/js/feed.js',
+  '/src/js/idb.js',
   '/src/js/promise.js',
   '/src/js/fetch.js',
   '/src/js/material.min.js',
@@ -71,18 +74,25 @@ function isInArray(string, array) {
 
 self.addEventListener('fetch', function (event) {
 
-  var url = 'https://httpbin.org/get';
+  var url = 'https://pwagram-871ec.firebaseio.com/post.json';
   if (event.request.url.indexOf(url) > -1) {
-    event.respondWith(
-      caches.open(CACHE_DYNAMIC_NAME)
-        .then(function (cache) {
-          return fetch(event.request)
-            .then(function (res) {
-              // trimCache(CACHE_DYNAMIC_NAME, 3);
-              cache.put(event.request, res.clone());
-              return res;
-            });
-        })
+    event.respondWith(fetch(event.request)
+      .then(function (res) {
+        var clonedRes = res.clone();
+        clearAllData('post')
+          .then(function () {
+            return clonedRes.json();
+          })
+          .then(function (data) {
+            for (var key in data) {
+              writeData('post', data[key])
+                .then(function() {
+                  deleteItemFromData('post', key);
+                });
+            }
+          });
+        return res;
+      })
     );
   } else if (isInArray(event.request.url, STATIC_FILES)) {
     event.respondWith(
