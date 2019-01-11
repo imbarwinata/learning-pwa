@@ -183,3 +183,40 @@ self.addEventListener('fetch', function (event) {
 //     fetch(event.request)
 //   );
 // });
+
+self.addEventListener('sync', function(event) {
+  console.log('[Service Worker] Background syncing', event);
+  if (event.tag === 'sync-new-post') {
+    console.log('[Service Worker] Syncing new Post');
+    event.waitUntil(
+      readAllData('sync-post')
+        .then(function(data) {
+          for (var dt of data) {
+            fetch('https://pwagram-871ec.firebaseio.com/post.json', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify({
+                id: dt.id,
+                title: dt.title,
+                location: dt.location,
+                image: 'https://firebasestorage.googleapis.com/v0/b/pwagram-871ec.appspot.com/o/AI.png?alt=media&token=68d0fdfb-17fe-4216-80b1-8c71b2a03039'
+              })
+            })
+              .then(function(res) {
+                console.log('Sent data', res);
+                if (res.ok) {
+                  deleteItemFromData('sync-post', dt.id); // Isn't working correctly!
+                }
+              })
+              .catch(function(err) {
+                console.log('Error while sending data', err);
+              });
+          }
+
+        })
+    );
+  }
+});

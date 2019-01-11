@@ -2,6 +2,9 @@ var shareImageButton = document.querySelector('#share-image-button');
 var createPostArea = document.querySelector('#create-post');
 var closeCreatePostModalButton = document.querySelector('#close-create-post-modal-btn');
 var sharedMomentsArea = document.querySelector('#shared-moments');
+var form = document.querySelector('form');
+var titleInput = document.querySelector('#title');
+var locationInput = document.querySelector('#location');
 
 function openCreatePostModal() {
   // createPostArea.style.display = 'block';
@@ -120,3 +123,59 @@ if ('indexedDB' in window) {
       }
     });
 }
+
+function sendData() {
+  fetch('https://pwagram-871ec.firebaseio.com/post.json', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify({
+      id: new Date().toISOString(),
+      title: titleInput.value,
+      location: locationInput.value,
+      image: 'https://firebasestorage.googleapis.com/v0/b/pwagram-871ec.appspot.com/o/AI.png?alt=media&token=68d0fdfb-17fe-4216-80b1-8c71b2a03039'
+    })
+  })
+    .then(res => {
+      console.log('Sent data', res);
+      updateUI();
+    })
+}
+
+form.addEventListener('submint', event => {
+  event.preventDefault();
+
+  if (titleInput.value.trim() === '' || locationInput.value.trim() === '') {
+    alert('Please enter valid data!');
+    return;
+  }
+
+  closeCreatePostModal();
+
+  if ('serviceWorker' in navigator && 'SyncManager' in window) {
+    navigator.serviceWorker.ready
+      .then(sw => {
+        var post = {
+          id: new Date().toISOString(),
+          title: titleInput.value,
+          location: locationInput.value,
+        }
+        writeData('sync-post', post)
+          .then(() => {
+            return sw.sync.register('sync-new-post');
+          })
+          .then(() => {
+            var snackbarContainer = document.querySelector('#confirmation-toast');
+            var data = {message: 'Your Post was saved for syncing!'};
+            snackbarContainer.MaterialSnackbar.showSnackbar(data);
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      });
+  } else {
+    sendData();
+  }
+});
