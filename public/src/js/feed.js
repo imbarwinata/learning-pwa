@@ -92,12 +92,12 @@ function createCard(data) {
 
 function updateUI(data) {
   clearCards();
-  for (let i = 0; i < data.length; i++) {
+  for (var i = 0; i < data.length; i++) {
     createCard(data[i]);
   }
 }
 
-var url = 'https://pwagram-871ec.firebaseio.com/post.json';
+var url = 'https://pwagram-871ec.firebaseio.com/posts.json';
 var networkDataReceived = false;
 
 fetch(url)
@@ -112,10 +112,10 @@ fetch(url)
       dataArray.push(data[key]);
     }
     updateUI(dataArray);
-});
+  });
 
 if ('indexedDB' in window) {
-  readAllData('post')
+  readAllData('posts')
     .then(function(data) {
       if (!networkDataReceived) {
         console.log('From cache', data);
@@ -125,7 +125,7 @@ if ('indexedDB' in window) {
 }
 
 function sendData() {
-  fetch('https://pwagram-871ec.firebaseio.com/post.json', {
+  fetch('https://us-central1-pwagram-871ec.cloudfunctions.net/storePostData', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -138,13 +138,13 @@ function sendData() {
       image: 'https://firebasestorage.googleapis.com/v0/b/pwagram-871ec.appspot.com/o/AI.png?alt=media&token=68d0fdfb-17fe-4216-80b1-8c71b2a03039'
     })
   })
-    .then(res => {
+    .then(function(res) {
       console.log('Sent data', res);
       updateUI();
     })
 }
 
-form.addEventListener('submint', event => {
+form.addEventListener('submit', function(event) {
   event.preventDefault();
 
   if (titleInput.value.trim() === '' || locationInput.value.trim() === '') {
@@ -156,22 +156,22 @@ form.addEventListener('submint', event => {
 
   if ('serviceWorker' in navigator && 'SyncManager' in window) {
     navigator.serviceWorker.ready
-      .then(sw => {
+      .then(function(sw) {
         var post = {
           id: new Date().toISOString(),
           title: titleInput.value,
-          location: locationInput.value,
-        }
-        writeData('sync-post', post)
-          .then(() => {
-            return sw.sync.register('sync-new-post');
+          location: locationInput.value
+        };
+        writeData('sync-posts', post)
+          .then(function() {
+            return sw.sync.register('sync-new-posts');
           })
-          .then(() => {
+          .then(function() {
             var snackbarContainer = document.querySelector('#confirmation-toast');
             var data = {message: 'Your Post was saved for syncing!'};
             snackbarContainer.MaterialSnackbar.showSnackbar(data);
           })
-          .catch(err => {
+          .catch(function(err) {
             console.log(err);
           });
       });
